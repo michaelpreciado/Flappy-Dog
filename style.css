@@ -3,21 +3,31 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Arial', sans-serif;
+    /* Prevent selection and callout menus on iOS */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none;
+    -webkit-touch-callout: none; /* iOS Safari */
 }
 
 body {
-    background-color: #5c94fc; /* Mario sky blue */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden;
+    /* background-color: #5c94fc; */ /* Background color will be handled by the container */
+    /* display: flex; */ /* Removed flex centering */
+    /* justify-content: center; */
+    /* align-items: center; */
+    /* min-height: 100vh; */
+    overflow: hidden; /* Prevent body scrolling */
 }
 
 .game-container {
-    position: relative;
+    position: fixed; /* Fixed position */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the container */
+
     /* Use viewport units for scaling */
-    width: 90vmin; 
+    width: 90vmin;
     height: 160vmin; /* Maintain aspect ratio roughly 9:16 */
     max-width: 360px; /* Max size for desktop */
     max-height: 640px;

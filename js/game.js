@@ -234,38 +234,49 @@ function update() {
 function render() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Draw background
-    ctx.fillStyle = '#6b8cff'; // Sky blue background
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    if (backgroundSprite.complete) {
+        // Tiled background drawing for seamless scrolling (optional but nice)
+        const bgWidth = backgroundSprite.width;
+        const numTiles = Math.ceil(canvas.width / bgWidth) + 1; // Draw one extra tile
+        let xOffset = -(Date.now() * 0.05 % bgWidth); // Slow horizontal scroll
+        for (let i = 0; i < numTiles; i++) {
+            ctx.drawImage(backgroundSprite, xOffset + i * bgWidth, 0, bgWidth, canvas.height);
+        }
+    } else {
+        ctx.fillStyle = '#6b8cff'; // Fallback sky blue background
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     // Draw pipes
     for (const pipe of pipes) {
-        // Top pipe
-        ctx.fillStyle = '#75CF00'; // Green pipe color
-        ctx.fillRect(pipe.x, pipe.top.y, pipe.width, pipe.top.height);
-        
-        // Pipe cap
-        ctx.fillStyle = '#75CF00'; // Slightly darker green for pipe cap
-        ctx.fillRect(pipe.x - 5, pipe.top.y + pipe.top.height - 20, pipe.width + 10, 20);
-        
-        // Bottom pipe
-        ctx.fillStyle = '#75CF00'; // Green pipe color
-        ctx.fillRect(pipe.x, pipe.bottom.y, pipe.width, pipe.bottom.height);
-        
-        // Pipe cap
-        ctx.fillStyle = '#75CF00'; // Slightly darker green for pipe cap
-        ctx.fillRect(pipe.x - 5, pipe.bottom.y, pipe.width + 10, 20);
+        if (pipeTopSprite.complete) {
+            ctx.drawImage(pipeTopSprite, pipe.x, pipe.top.y, pipe.width, pipe.top.height);
+        }
+        if (pipeBottomSprite.complete) {
+            ctx.drawImage(pipeBottomSprite, pipe.x, pipe.bottom.y, pipe.width, pipe.bottom.height);
+        }
     }
-    
+
     // Draw ground
-    ctx.fillStyle = '#C84C0C'; // Brown ground
-    ctx.fillRect(0, ground.y, canvas.width, GROUND_HEIGHT);
-    
-    // Draw grass on ground
-    ctx.fillStyle = '#00A800'; // Green grass
-    ctx.fillRect(0, ground.y, canvas.width, 15);
-    
+    if (groundSprite.complete) {
+        // Tiled ground drawing
+        const groundWidth = groundSprite.width;
+        const numGroundTiles = Math.ceil(canvas.width / groundWidth) + 1;
+        // Make ground scroll faster than pipes
+        let groundXOffset = -(Date.now() * PIPE_SPEED * 0.05 % groundWidth);
+        for (let i = 0; i < numGroundTiles; i++) {
+            ctx.drawImage(groundSprite, groundXOffset + i * groundWidth, ground.y, groundWidth, GROUND_HEIGHT);
+        }
+    } else {
+        // Fallback ground colors
+        ctx.fillStyle = '#C84C0C'; // Brown ground
+        ctx.fillRect(0, ground.y, canvas.width, GROUND_HEIGHT);
+        ctx.fillStyle = '#00A800'; // Green grass
+        ctx.fillRect(0, ground.y, canvas.width, 15);
+    }
+
     // Draw mario
     if (marioSprite.complete) { // Ensure image is loaded
         ctx.drawImage(marioSprite, mario.x, mario.y, mario.width, mario.height);
