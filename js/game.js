@@ -51,11 +51,12 @@ let hitSoundContext;
 let gameOverSoundContext;
 
 // DOM elements
-let startScreen, gameOverScreen, scoreDisplay, finalScoreDisplay, highScoreDisplay;
+let gameContainer, startScreen, gameOverScreen, scoreDisplay, finalScoreDisplay, highScoreDisplay;
 
 // Initialize the game
 function init() {
     // Get DOM elements
+    gameContainer = document.querySelector('.game-container');
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
     startScreen = document.getElementById('start-screen');
@@ -132,6 +133,7 @@ function startGame() {
     marioSprite.src = characterAssets[selectedCharacter];
     startScreen.style.display = 'none';
     gameOverScreen.style.display = 'none';
+    gameContainer.classList.remove('game-is-over');
     score = 0;
     updateScore();
     
@@ -209,8 +211,12 @@ function update() {
             continue;
         }
         
+        // Create full rectangle objects for collision check, including the pipe's x coordinate
+        const topPipeRect = { x: pipe.x, y: pipe.top.y, width: pipe.width, height: pipe.top.height };
+        const bottomPipeRect = { x: pipe.x, y: pipe.bottom.y, width: pipe.width, height: pipe.bottom.height };
+        
         // Check for collisions with pipes
-        if (checkCollision(mario, pipe.top) || checkCollision(mario, pipe.bottom)) {
+        if (checkCollision(mario, topPipeRect) || checkCollision(mario, bottomPipeRect)) {
             gameEnd();
         }
         
@@ -321,6 +327,7 @@ function gameEnd() {
     // Show game over screen
     finalScoreDisplay.textContent = score;
     highScoreDisplay.textContent = highScore;
+    gameContainer.classList.add('game-is-over');
     gameOverScreen.style.display = 'flex';
 }
 
