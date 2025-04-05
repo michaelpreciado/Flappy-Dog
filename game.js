@@ -1,9 +1,9 @@
 // --- Game Constants ---
-const GAME_WIDTH = window.innerWidth * window.devicePixelRatio;
-const GAME_HEIGHT = window.innerHeight * window.devicePixelRatio;
+const LOGICAL_WIDTH = 540; // Fixed logical width
+const LOGICAL_HEIGHT = 960; // Fixed logical height
 
-const PLAYER_START_X = GAME_WIDTH * 0.2; // Position player relative to screen width
-const PLAYER_START_Y = GAME_HEIGHT / 2;
+const PLAYER_START_X = LOGICAL_WIDTH * 0.2; // Position player relative to screen width
+const PLAYER_START_Y = LOGICAL_HEIGHT / 2;
 const PLAYER_GRAVITY = 1000;
 const PLAYER_FLAP_VELOCITY = -400; // Keep this negative
 const PLAYER_ANGLE_UP = -20;
@@ -14,7 +14,7 @@ const PLAYER_ANGLE_UP = -20;
 const PIPE_SPAWN_DELAY = 1800; // Milliseconds - Increased from 1500
 const PIPE_VELOCITY_X = -150; // Pixels/second - Slowed down from -200
 const PIPE_GAP_VERTICAL = 320; // Vertical gap between pipes - Increased
-const PIPE_HORIZONTAL_MARGIN = 75; // Min distance from top/bottom edge for the gap center
+const PIPE_HORIZONTAL_MARGIN = 75; // Min distance from top/bottom edge for the gap center (relative to LOGICAL_HEIGHT)
 
 // Placeholder Graphics Details - Removed Player constants
 // const PLAYER_WIDTH = 40;
@@ -62,8 +62,8 @@ const config = {
         mode: Phaser.Scale.FIT,
         parent: 'game-container',
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: GAME_WIDTH, // Use constant
-        height: GAME_HEIGHT // Use constant
+        width: LOGICAL_WIDTH, // Use logical constant
+        height: LOGICAL_HEIGHT // Use logical constant
     },
     physics: {
         default: 'arcade',
@@ -169,10 +169,10 @@ function create() {
     let groundGraphics = this.add.graphics();
     // Brown base
     groundGraphics.fillStyle(MARIO_GROUND_BROWN, 1);
-    groundGraphics.fillRect(0, GAME_HEIGHT - GROUND_HEIGHT, GAME_WIDTH, GROUND_HEIGHT);
+    groundGraphics.fillRect(0, LOGICAL_HEIGHT - GROUND_HEIGHT, LOGICAL_WIDTH, GROUND_HEIGHT);
     // Green top
     groundGraphics.fillStyle(MARIO_GROUND_GREEN, 1);
-    groundGraphics.fillRect(0, GAME_HEIGHT - GROUND_HEIGHT, GAME_WIDTH, GROUND_TOP_HEIGHT);
+    groundGraphics.fillRect(0, LOGICAL_HEIGHT - GROUND_HEIGHT, LOGICAL_WIDTH, GROUND_TOP_HEIGHT);
 
     groundGraphics.setDepth(-1); // Draw behind everything else
 
@@ -199,31 +199,31 @@ function create() {
 
     // Score Text
     scoreText = this.add.text(16, 16, `Score: ${score}`, SCORE_TEXT_STYLE).setDepth(2);
-    highscoreText = this.add.text(GAME_WIDTH - 16, 16, `Best: ${highscore}`, SCORE_TEXT_STYLE).setOrigin(1, 0).setDepth(2);
+    highscoreText = this.add.text(LOGICAL_WIDTH - 16, 16, `Best: ${highscore}`, SCORE_TEXT_STYLE).setOrigin(1, 0).setDepth(2);
 
 
     // --- Create Game Over Texts (Initially Hidden) ---
-    gameOverTexts.title = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 80, 'Game Over', TITLE_TEXT_STYLE)
+    gameOverTexts.title = this.add.text(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2 - 80, 'Game Over', TITLE_TEXT_STYLE)
         .setOrigin(0.5).setDepth(3).setVisible(false);
-    gameOverTexts.finalScore = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '', INFO_TEXT_STYLE) // Text set in endGame
+    gameOverTexts.finalScore = this.add.text(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2, '', INFO_TEXT_STYLE) // Text set in endGame
         .setOrigin(0.5).setDepth(3).setVisible(false);
-    gameOverTexts.restart = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 80, 'Tap to Restart', INFO_TEXT_STYLE)
+    gameOverTexts.restart = this.add.text(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2 + 80, 'Tap to Restart', INFO_TEXT_STYLE)
         .setOrigin(0.5).setDepth(3).setVisible(false);
     // --- End Game Over Texts ---
 
 
     // --- Character Selection Menu ---
     menuTexts = []; // Clear previous menu items if any
-    const menuStartY = GAME_HEIGHT / 2 - 50;
+    const menuStartY = LOGICAL_HEIGHT / 2 - 50;
     const menuSpacing = 80;
 
     // Store the title text object
-    menuTitleText = this.add.text(GAME_WIDTH / 2, menuStartY - menuSpacing, 'Choose Your Character:', INFO_TEXT_STYLE)
+    menuTitleText = this.add.text(LOGICAL_WIDTH / 2, menuStartY - menuSpacing, 'Choose Your Character:', INFO_TEXT_STYLE)
         .setOrigin(0.5)
         .setDepth(3);
 
     characters.forEach((character, index) => {
-        const characterText = this.add.text(GAME_WIDTH / 2, menuStartY + index * menuSpacing, character.name, TITLE_TEXT_STYLE)
+        const characterText = this.add.text(LOGICAL_WIDTH / 2, menuStartY + index * menuSpacing, character.name, TITLE_TEXT_STYLE)
             .setOrigin(0.5)
             .setDepth(3)
             .setInteractive({ useHandCursor: true }); // Make text clickable
@@ -273,7 +273,7 @@ function selectCharacter(index) {
     player.setScale(0.2); // Re-apply or adjust scale based on character if needed
 
     // Display "Tap to Flap!" message
-    startText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'Tap to Flap!', TITLE_TEXT_STYLE)
+    startText = this.add.text(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2, 'Tap to Flap!', TITLE_TEXT_STYLE)
         .setOrigin(0.5)
         .setDepth(3);
 
@@ -322,7 +322,7 @@ function update(time, delta) {
     }
 
     // Check if player is out of vertical bounds
-    if (player.getBounds().bottom >= GAME_HEIGHT || player.getBounds().top <= 0) {
+    if (player.getBounds().bottom >= LOGICAL_HEIGHT || player.getBounds().top <= 0) {
         endGame(this);
     }
 
@@ -380,15 +380,15 @@ function addPipeRow() {
     // Calculate center of the gap, ensuring margin from top/bottom
     const gapCenterY = Phaser.Math.Between(
         PIPE_HORIZONTAL_MARGIN + PIPE_GAP_VERTICAL / 2,
-        GAME_HEIGHT - PIPE_HORIZONTAL_MARGIN - PIPE_GAP_VERTICAL / 2
+        LOGICAL_HEIGHT - PIPE_HORIZONTAL_MARGIN - PIPE_GAP_VERTICAL / 2 // Use LOGICAL_HEIGHT
     );
 
     const topPipeY = gapCenterY - PIPE_GAP_VERTICAL / 2;
     const bottomPipeY = gapCenterY + PIPE_GAP_VERTICAL / 2;
 
     // Add pipes using pooling
-    addPipe(GAME_WIDTH, topPipeY, true);  // Top Pipe
-    addPipe(GAME_WIDTH, bottomPipeY, false); // Bottom Pipe
+    addPipe(LOGICAL_WIDTH, topPipeY, true);  // Top Pipe - Spawn at right edge of logical width
+    addPipe(LOGICAL_WIDTH, bottomPipeY, false); // Bottom Pipe - Spawn at right edge of logical width
 }
 
 function addPipe(x, y, isTopPipe) {
