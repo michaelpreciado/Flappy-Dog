@@ -2,84 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1">
+    <!-- Responsive Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Flappy Dogs</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#5c94fc">
+    <title>Flappy Dog</title> <!-- Updated Title -->
+    <!-- PWA Manifest & Theme Color (Handled by vite-plugin-pwa) -->
+    <!-- <link rel="manifest" href="/manifest.webmanifest"> -->
+    <!-- <meta name="theme-color" content="#5c94fc"> -->
+    <!-- Favicon (place in /public directory) -->
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <!-- Fonts (Still okay to load from CDN) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <!-- CSS is imported via JS now -->
+    <!-- <link rel="stylesheet" href="style.css"> -->
 </head>
 <body>
+    <!-- Optional: Loading Indicator -->
+    <div id="loading-indicator" style="position: fixed; /* ... basic styling ... */ display: none;">Loading...</div>
+
     <div class="game-container">
         <div class="start-screen" id="start-screen">
-            <!-- Logo -->
-            <div class="logo-placeholder">
-                <img src="assets/images/flappy-dog.png" alt="Flappy Dog Logo" style="max-width: 100%; height: auto;">
-            </div> 
-            
+            <!-- Logo Placeholder -->
+            <div class="logo-container">
+                <img id="start-logo" src="" alt="Flappy Dog Logo" class="logo-image">
+            </div>
+            <!-- Removed H2 title -->
+            <!-- <h2>FLAPPY DOG</h2> -->
+
             <p class="start-instructions">Press SPACE or tap to start and flap!</p>
-            
+
             <div class="character-select">
                 <p>Choose your character:</p>
                 <div class="options-wrapper">
                     <div class="char-option" data-char="taz">
-                        <img src="assets/images/8bit taz.png" alt="Taz">
+                        <!-- Image src will be set by JS or use imported URL if needed here -->
+                        <img alt="Taz" data-src="assets/images/8bit taz.png"> <!-- Example: using data-src -->
                         <span class="char-name">Taz</span>
                     </div>
                     <div class="char-option" data-char="chloe">
-                        <img src="assets/images/8 bit chloe.png" alt="Chloe">
+                        <img alt="Chloe" data-src="assets/images/8 bit chloe.png">
                         <span class="char-name">Chloe</span>
                     </div>
                 </div>
             </div>
 
             <button id="start-button" class="action-button">Start Game</button>
-            <button id="theme-toggle-start" class="theme-toggle-button">Toggle Theme</button> 
+            <button id="theme-toggle-start" class="theme-toggle-button">Toggle Theme</button>
             <button id="mute-toggle" class="action-button" style="margin-top: 5px;">Mute</button>
         </div>
-        
+
         <canvas id="game-canvas"></canvas>
-        
+
         <div class="game-over" id="game-over">
-            <!-- Placeholder for gameover.png image removed -->
-            <!-- <div class="game-over-image-placeholder">...</div> --> 
             <h2>Game Over</h2>
             <p>Score: <span id="final-score">0</span></p>
             <p>High Score: <span id="high-score">0</span></p>
-            
-            <!-- Leaderboard Section -->
+
             <div class="leaderboard-section">
                 <h3>Local Leaderboard</h3>
                 <table id="leaderboard-table">
                     <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Name</th>
-                            <th>Score</th>
-                        </tr>
+                        <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
                     </thead>
                     <tbody id="leaderboard-body">
-                        <!-- Scores will be populated by JS -->
+                        <!-- Scores populated by JS -->
                     </tbody>
                 </table>
             </div>
-            
+
             <button id="restart-button" class="action-button">Play Again</button>
+            <!-- Add mute toggle to game over? -->
+            <!-- <button id="mute-toggle-gameover" class="action-button">Mute</button> -->
         </div>
-        
+
         <div class="score-display">
             <div class="score" id="score">0</div>
         </div>
-        
-        <!-- Optional: In-game theme toggle? Or only on start/end screens? -->
-        <!-- <button id="theme-toggle-game" class="theme-toggle-button">T</button> -->
     </div>
-    
-    <!-- Nickname Entry Modal (hidden by default) -->
+
+    <!-- Nickname Entry Modal -->
     <div id="nickname-modal" class="modal">
         <div class="modal-content">
             <h2>New High Score!</h2>
@@ -89,21 +94,14 @@
         </div>
     </div>
 
-    <script src="js/sounds.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/leaderboard.js"></script>
+    <!-- Main JS Entry Point for Vite -->
+    <script type="module" src="/js/main.js"></script>
 
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-    </script>
+    <!-- Remove old script tags -->
+    <!-- <script src="js/sounds.js"></script> -->
+    <!-- <script src="js/game.js"></script> -->
+    <!-- <script src="js/leaderboard.js"></script> -->
+    <!-- Service Worker registration handled by vite-plugin-pwa -->
+
 </body>
-</html>
+</html> 
