@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Flappy Dogs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="start-screen" id="start-screen">
+            <h1>Flappy Dogs</h1>
+            <p>Press SPACE or tap to start and flap!</p>
+            
+            <div class="character-select">
+                <p>Choose your character:</p>
+                <img src="assets/images/8bit taz.png" alt="Taz" class="char-option" data-char="taz">
+                <img src="assets/images/8 bit chloe.png" alt="Chloe" class="char-option" data-char="chloe">
+            </div>
+
+            <button id="start-button">Start Game</button>
+        </div>
+        
+        <canvas id="game-canvas"></canvas>
+        
+        <div class="game-over" id="game-over">
+            <h2 class="wasted-text">WASTED</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <p>High Score: <span id="high-score">0</span></p>
+            <button id="restart-button">Play Again</button>
+        </div>
+        
+        <div class="score-display">
+            <div class="score" id="score">0</div>
+        </div>
+    </div>
+    
+    <script src="js/sounds.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
