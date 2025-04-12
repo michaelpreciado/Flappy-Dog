@@ -2,21 +2,25 @@
 // This file handles the game initialization, loop, and core mechanics
 
 // Game constants
-const GRAVITY = 0.5;
-const FLAP_FORCE = -10;
-const PIPE_SPEED = 3;
+const GRAVITY = 0.28;        // Decreased further for slower fall
+const FLAP_FORCE = -7;      // Decreased magnitude for softer flap
+const PIPE_SPEED = 2.5;      // Decreased for slower pipe movement
 const PIPE_SPAWN_INTERVAL = 1500; // milliseconds
-const PIPE_GAP = 180;
+const PIPE_GAP = 160;
 const GROUND_HEIGHT = 80;
 const MARIO_WIDTH = 40;
 const MARIO_HEIGHT = 40;
+const TERMINAL_VELOCITY = 8; // Decreased max downward speed
+const MAX_ROTATION_DOWN = Math.PI / 2; // 90 degrees downward
+const MAX_ROTATION_UP = -Math.PI / 6; // 30 degrees upward
+const ROTATION_SPEED_FACTOR = 5; // How quickly rotation responds to velocity change
 
 // Game variables
 let canvas, ctx;
 let selectedCharacter = 'taz'; // Default character
 const characterAssets = {
-    taz: 'assets/images/taz.png',
-    chloe: 'assets/images/chloe.png'
+    taz: 'assets/images/8bit taz.png',     // Use 8-bit Taz
+    chloe: 'assets/images/8 bit chloe.png' // Use 8-bit Chloe
 };
 
 let mario = {
@@ -25,7 +29,8 @@ let mario = {
     width: MARIO_WIDTH,
     height: MARIO_HEIGHT,
     velocity: 0,
-    isFlapping: false
+    isFlapping: false,
+    rotation: 0 // Add rotation property
 };
 
 let pipes = [];
@@ -108,9 +113,12 @@ function init() {
     canvas.addEventListener('touchend', handleTouchEnd);
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mouseup', handleMouseUp);
+
+    // Show start screen initially
+    startScreen.classList.add('visible');
     
-    // Initial render
-    render();
+    // Initial render (optional, might not be needed if canvas is behind start screen)
+    // render(); 
 }
 
 // Load game assets
@@ -131,15 +139,16 @@ function startGame() {
     gameStarted = true;
     gameOver = false;
     marioSprite.src = characterAssets[selectedCharacter];
-    startScreen.style.display = 'none';
-    gameOverScreen.style.display = 'none';
-    gameContainer.classList.remove('game-is-over');
+    startScreen.classList.remove('visible'); // Use classList
+    gameOverScreen.classList.remove('visible'); // Use classList
+    // gameContainer.classList.remove('game-is-over'); // Removed - CSS effect removed
     score = 0;
     updateScore();
     
-    // Reset mario position
+    // Reset mario position and state
     mario.y = 300;
     mario.velocity = 0;
+    mario.rotation = 0; // Reset rotation
     
     // Clear pipes
     pipes = [];
@@ -170,8 +179,13 @@ function gameLoop() {
 function update() {
     if (!gameStarted || gameOver) return;
     
-    // Update mario
+    // Update mario velocity
     mario.velocity += GRAVITY;
+    
+    // Apply terminal velocity
+    if (mario.velocity > TERMINAL_VELOCITY) {
+        mario.velocity = TERMINAL_VELOCITY;
+    }
     
     if (mario.isFlapping) {
         mario.velocity = FLAP_FORCE;
@@ -181,16 +195,30 @@ function update() {
     
     mario.y += mario.velocity;
     
+    // Calculate rotation based on velocity
+    if (mario.velocity > 1) { // Falling
+        // Rotate downwards towards 90 degrees
+        mario.rotation += Math.PI / 180 * ROTATION_SPEED_FACTOR; // Increment rotation
+        if (mario.rotation > MAX_ROTATION_DOWN) {
+            mario.rotation = MAX_ROTATION_DOWN;
+        }
+    } else if (mario.velocity < 0) { // Flapping/Rising
+        // Instantly set rotation when flapping, or slightly rotate up if coasting up
+        mario.rotation = MAX_ROTATION_UP;
+    }
+    
     // Check for collisions with ground
-    if (mario.y + mario.height > ground.y) {
-        mario.y = ground.y - mario.height;
+    if (mario.y + mario.height / 2 > ground.y) { // Adjust collision check for rotation center
+        mario.y = ground.y - mario.height / 2;
+        mario.rotation = MAX_ROTATION_DOWN; // Ensure pointing down when hitting ground
         gameEnd();
     }
     
     // Check for collisions with ceiling
-    if (mario.y < 0) {
-        mario.y = 0;
+    if (mario.y - mario.height / 2 < 0) { // Adjust collision check for rotation center
+        mario.y = mario.height / 2;
         mario.velocity = 0;
+        mario.rotation = 0; // Reset rotation if hitting ceiling
     }
     
     // Spawn pipes
@@ -277,12 +305,19 @@ function render() {
         ctx.fillRect(0, ground.y, canvas.width, 15);
     }
 
-    // Draw mario
+    // Draw mario with rotation
     if (marioSprite.complete) { // Ensure image is loaded
-        ctx.drawImage(marioSprite, mario.x, mario.y, mario.width, mario.height);
+        ctx.save(); // Save current context state
+        // Translate context to the center of mario
+        ctx.translate(mario.x + mario.width / 2, mario.y);
+        // Rotate the context
+        ctx.rotate(mario.rotation);
+        // Draw the image centered on the new origin
+        ctx.drawImage(marioSprite, -mario.width / 2, -mario.height / 2, mario.width, mario.height);
+        ctx.restore(); // Restore context state
     } else {
         // Fallback or placeholder if image not loaded yet
-        ctx.fillRect(mario.x, mario.y, mario.width, mario.height);
+        ctx.fillRect(mario.x, mario.y - mario.height / 2, mario.width, mario.height); // Adjust fallback drawing position
     }
 }
 
@@ -311,13 +346,22 @@ function spawnPipe() {
     });
 }
 
-// Check collision between two rectangles
-function checkCollision(rect1, rect2) {
+// Check collision between two rectangles (adjusted slightly for rotated mario)
+function checkCollision(marioRect, pipeRect) {
+    // Note: Simple AABB collision doesn't account for rotation.
+    // For true pixel-perfect or rotated rectangle collision, more complex logic is needed.
+    // This implementation remains AABB for simplicity, using mario's unrotated bounding box.
+    // We use mario.y - mario.height / 2 as the top coordinate due to the center-based rendering.
+    const marioTop = marioRect.y - marioRect.height / 2;
+    const marioBottom = marioRect.y + marioRect.height / 2;
+    const marioLeft = marioRect.x;
+    const marioRight = marioRect.x + marioRect.width;
+
     return (
-        rect1.x < rect2.x + rect2.width &&
-        rect1.x + rect1.width > rect2.x &&
-        rect1.y < rect2.y + rect2.height &&
-        rect1.y + rect1.height > rect2.y
+        marioLeft < pipeRect.x + pipeRect.width &&
+        marioRight > pipeRect.x &&
+        marioTop < pipeRect.y + pipeRect.height &&
+        marioBottom > pipeRect.y
     );
 }
 
@@ -338,8 +382,8 @@ function gameEnd() {
     // Show game over screen
     finalScoreDisplay.textContent = score;
     highScoreDisplay.textContent = highScore;
-    gameContainer.classList.add('game-is-over');
-    gameOverScreen.style.display = 'flex';
+    // gameContainer.classList.add('game-is-over'); // Removed - CSS effect removed
+    gameOverScreen.classList.add('visible'); // Use classList
 }
 
 // Update score display

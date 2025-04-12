@@ -1,30 +1,73 @@
+/*
+* General Pixel Art Styling Overhaul
+* - Consistent pixel font ("Press Start 2P")
+* - Sharp edges, no border-radius
+* - Pixelated rendering for images/canvas
+* - Simple color palette
+* - No modern effects (shadows, gradients)
+*/
+
+:root {
+    --pixel-bg-color-game: #3a3a50; /* Dark blue-gray background */
+    --pixel-bg-color-overlay: rgba(0, 0, 0, 0.6); /* Slightly transparent black overlay */
+    --pixel-text-color: #ffffff; /* White text */
+    --pixel-text-shadow-color: #000000;
+    --pixel-title-color: #f7a838; /* Orange-yellow title */
+    --pixel-button-bg: #f7a838; /* Match title */
+    --pixel-button-text: #000000;
+    --pixel-button-border: #000000;
+    --pixel-score-bg: rgba(255, 255, 255, 0.7);
+    --pixel-score-text: #3a3a50;
+    --pixel-score-border: #000000;
+    --pixel-select-border: #f7a838; /* Match title/button */
+    --pixel-ground-color: #7d4c2f; /* Darker Brown */
+    --pixel-grass-color: #5d9455; /* Muted Green */
+    --pixel-border-color: #ffffff; /* White border for container */
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
+    /* Apply Pixel Font */
+    font-family: "Press Start 2P", cursive;
     /* Prevent selection and callout menus on iOS */
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none;
     -webkit-touch-callout: none; /* iOS Safari */
+    /* Ensure pixelated rendering for scaled images/canvas */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    will-change: opacity, transform; /* Hint browser for optimization */
 }
 
 body {
-    /* background-color: #5c94fc; */ /* Background color will be handled by the container */
-    /* display: flex; */ /* Removed flex centering */
-    /* justify-content: center; */
-    /* align-items: center; */
-    /* min-height: 100vh; */
-    overflow: hidden; /* Prevent body scrolling */
+    background-color: #000; /* Black background outside container */
+    /* overflow: hidden; Removed - Flexbox handles containment */
+    /* Add safe area padding for notched devices */
+    padding-top: constant(safe-area-inset-top); /* iOS 11.0 */
+    padding-right: constant(safe-area-inset-right);
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-left: constant(safe-area-inset-left);
+    padding-top: env(safe-area-inset-top); /* iOS 11.2+ */
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    /* Add Flexbox for centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh; /* Ensure body takes full height */
 }
 
 .game-container {
-    position: fixed; /* Fixed position */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Center the container */
+    /* position: fixed; Removed - Centered by body Flexbox */
+    /* top: 50%; Removed */
+    /* left: 50%; Removed */
+    /* transform: translate(-50%, -50%); Removed */
 
     /* Use viewport units for scaling */
     width: 90vmin;
@@ -33,11 +76,11 @@ body {
     max-height: 640px;
     aspect-ratio: 9 / 16; /* Enforce aspect ratio */
 
-    background-color: #6b8cff;
-    border: 4px solid #000;
-    border-radius: 8px;
+    background-color: var(--pixel-bg-color-game); /* Use CSS variable */
+    border: 4px solid var(--pixel-border-color); /* Thick white border */
+    border-radius: 0; /* Sharp corners */
     overflow: hidden;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: none; /* Remove modern glow */
 }
 
 #game-canvas {
@@ -47,6 +90,11 @@ body {
     width: 100%;
     height: 100%;
     z-index: 1;
+    /* Canvas background will be drawn in JS, set container bg */
+    /* Ensure canvas itself renders crisply */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }
 
 .start-screen, .game-over {
@@ -59,60 +107,70 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
+    background-color: var(--pixel-bg-color-overlay);
+    color: var(--pixel-text-color);
     z-index: 10;
     text-align: center;
     padding: 20px;
+    /* Visibility controlled by JS adding/removing 'visible' class */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
 }
 
+.start-screen.visible,
+.game-over.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0s linear 0s;
+}
+
+/* Initially hide game-over screen using the class */
 .game-over {
-    display: none;
+    display: flex; /* Always use flex for layout */
 }
 
 h1, h2 {
-    color: #e7471d; /* Mario red */
-    text-shadow: 2px 2px 0 #000;
+    color: var(--pixel-title-color);
+    text-shadow: 2px 2px 0 var(--pixel-text-shadow-color);
     margin-bottom: 20px;
-    /* Fluid font size */
-    font-size: clamp(1.8rem, 5vmin, 2.5rem);
+    font-size: clamp(1.6rem, 4.5vmin, 2.2rem);
+    line-height: 1.2;
 }
 
 h2 {
-    font-size: clamp(1.5rem, 4vmin, 2rem);
+    font-size: clamp(1.4rem, 4vmin, 2rem);
 }
 
 p {
     margin-bottom: 20px;
-    font-size: clamp(0.9rem, 2.5vmin, 1.2rem);
+    font-size: clamp(0.7rem, 1.8vmin, 0.9rem);
+    color: var(--pixel-text-color);
+    line-height: 1.4;
 }
 
 button {
-    background-color: #e7471d; /* Mario red */
-    color: white;
-    border: none;
-    padding: clamp(8px, 2vmin, 10px) clamp(15px, 4vmin, 20px);
-    font-size: clamp(1rem, 2.8vmin, 1.2rem);
-    border-radius: 5px;
+    background-color: var(--pixel-button-bg);
+    color: var(--pixel-button-text);
+    border: 3px solid var(--pixel-button-border);
+    padding: clamp(8px, 1.5vmin, 10px) clamp(15px, 3vmin, 20px);
+    font-size: clamp(0.8rem, 2vmin, 1rem);
+    border-radius: 0; /* Sharp corners */
     cursor: pointer;
-    margin-top: 20px;
-    border: 3px solid #000;
-    box-shadow: 0 4px 0 #000;
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-
-button:hover {
-    background-color: #ff5a2b;
+    margin-top: 15px;
+    box-shadow: none; /* Remove modern shadow */
+    transition: transform 0.1s, background-color 0.1s;
+    text-transform: uppercase;
 }
 
 button:active {
-    transform: translateY(4px);
-    box-shadow: 0 0 0 #000;
+    transform: translate(2px, 2px); /* Simple pixel shift on click */
+    background-color: #d68f2e; /* Darker shade on click */
 }
 
 .score-display {
     position: absolute;
-    top: 20px;
+    top: 15px;
     left: 0;
     width: 100%;
     z-index: 5;
@@ -121,67 +179,119 @@ button:active {
 }
 
 .score {
-    background-color: rgba(255, 255, 255, 0.7);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: clamp(1.2rem, 4vmin, 1.5rem);
-    font-weight: bold;
-    color: #e7471d;
-    border: 2px solid #000;
+    background-color: var(--pixel-score-bg);
+    padding: 8px 15px;
+    border-radius: 0; /* Sharp corners */
+    font-size: clamp(1rem, 2.5vmin, 1.3rem);
+    font-weight: normal; /* Normal weight for pixel font */
+    color: var(--pixel-score-text);
+    border: 2px solid var(--pixel-score-border);
+    text-shadow: none;
 }
 
 .character-select {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .character-select p {
     margin-bottom: 10px;
+    font-size: clamp(0.7rem, 1.8vmin, 0.9rem);
 }
 
 .char-option {
-    /* Responsive size */
-    width: clamp(35px, 10vmin, 50px);
-    height: clamp(35px, 10vmin, 50px);
-    margin: 0 clamp(5px, 2vmin, 10px); /* Responsive margin */
+    width: clamp(35px, 8vmin, 45px);
+    height: clamp(35px, 8vmin, 45px);
+    margin: 0 clamp(4px, 1.5vmin, 8px);
     cursor: pointer;
     border: 3px solid transparent;
-    border-radius: 5px;
-    transition: border-color 0.2s;
+    border-radius: 0; /* Sharp corners */
+    transition: border-color 0.1s;
+    /* Ensure crisp rendering */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    background-color: rgba(255, 255, 255, 0.2); /* Slight background */
 }
 
 .char-option.selected {
-    border-color: #ffd700; /* Gold border for selected */
+    border-color: var(--pixel-select-border);
 }
 
-/* Style for the game-over state */
+/* Remove the blur/grayscale effect, rely on overlay */
 .game-container.game-is-over #game-canvas {
-    filter: grayscale(80%) blur(2px);
-    transition: filter 0.5s ease-out;
+    filter: none;
+    transition: none;
 }
 
-/* Wasted Text Styling */
+/* Simplified Wasted Text - rely on font and color */
 .wasted-text {
-    font-family: 'Impact', Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* GTA-like font */
-    font-size: clamp(3rem, 12vmin, 5rem); /* Larger size */
-    color: #B22222; /* Firebrick red */
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.7); /* Stronger shadow */
+    /* font-family: "Press Start 2P", cursive; /* Use game font */
+    font-size: clamp(2.5rem, 8vmin, 3.5rem); /* Adjust size */
+    color: #e64539; /* Bright Red */
+    text-shadow: 3px 3px 0px var(--pixel-text-shadow-color);
     text-transform: uppercase;
-    margin-bottom: 30px;
-    /* Animation */
+    margin-bottom: 25px;
+    /* Keep animation simple */
     opacity: 0;
-    transform: scale(1.5);
-    animation: wastedAnim 1s forwards;
-    animation-delay: 0.2s; /* Delay slightly after screen appears */
+    transform: scale(1.2);
+    animation: fadeInScale 0.5s forwards;
+    animation-delay: 0.1s;
 }
 
-/* Keyframes for the Wasted text animation */
-@keyframes wastedAnim {
+/* Simplified Keyframes */
+@keyframes fadeInScale {
     from {
         opacity: 0;
-        transform: scale(1.5);
+        transform: scale(1.2);
     }
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+/* Ensure high score span is styled */
+#high-score {
+    font-weight: bold;
+    color: var(--pixel-title-color);
+}
+
+/* Fallback ground/grass colors (if images fail) */
+.fallback-ground {
+    background-color: var(--pixel-ground-color);
+}
+.fallback-grass {
+    background-color: var(--pixel-grass-color);
+    height: 15px; /* Consistent height */
+}
+
+/* Ensure JS uses classes for visibility */
+/* Remove inline styles from JS if possible */
+
+/* Styles for the new logo container and image (if you add one) */
+.logo-container {
+    width: 80%; /* Adjust width as needed */
+    max-width: 280px; /* Max size */
+    margin-bottom: 10px; /* Space below logo */
+    /* No background, let start-screen background show through */
+}
+
+.logo-image {
+    display: block; /* Remove extra space below image */
+    width: 100%; /* Fill container */
+    height: auto; /* Maintain aspect ratio */
+    image-rendering: pixelated; /* Ensure crisp pixels */
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    animation: logoWiggle 3.5s ease-in-out infinite alternate; /* Apply wiggle */
+}
+
+/* Animation for the logo wiggle */
+@keyframes logoWiggle {
+    0%, 100% {
+        transform: rotate(-1deg) scale(1);
+    }
+    50% {
+        transform: rotate(1deg) scale(1.02);
     }
 }
