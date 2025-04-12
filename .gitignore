@@ -1,14 +1,1 @@
 .qodo
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Node.js / Build artifacts (optional, but common)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-dist/
-build/
