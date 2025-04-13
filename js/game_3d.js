@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Game constants (adjust as needed for 3D)
-const GRAVITY = 0.015; // Adjusted for 3D space/scale
+const GRAVITY = 0.01; // Adjusted for 3D space/scale - Reduced from 0.015
 const FLAP_FORCE = -0.5; // Adjusted for 3D space/scale
 const PIPE_SPEED = 0.05; // Adjusted for 3D space/scale
 const PIPE_SPAWN_INTERVAL = 1500; // milliseconds
@@ -18,12 +18,14 @@ let dogObject; // Will hold the 3D representation of the dog
 let pipes = [];
 let groundPlane;
 let ambientLight, directionalLight;
+let textureLoader; // Texture loader instance
+let characterTextures = {}; // Store loaded textures
 
 // Game state variables (similar to 2D version)
 let selectedCharacter = 'taz'; // Default character
 const characterAssets = {
-    taz: 'assets/images/taz.png',
-    chloe: 'assets/images/chloe.png'
+    taz: 'assets/images/8bit taz.png',
+    chloe: 'assets/images/8 bit chloe.png'
 };
 let dog = {
     x: DOG_START_X,
@@ -39,6 +41,14 @@ let gameStarted = false;
 let gameOver = false;
 let lastPipeSpawn = 0;
 let animationFrameId;
+let isTransitioning = false; // Flag to prevent multiple starts during delay
+const RESTART_DELAY = 500; // Delay in milliseconds
+
+// --- Frame Rate Control ---
+let lastTime = 0;
+let elapsedTime = 0;
+const targetFPS = 30;
+const targetFrameDuration = 1000 / targetFPS;
 
 // Sound contexts (reuse from sounds.js)
 let flapSoundContext, scoreSoundContext, hitSoundContext, gameOverSoundContext;
@@ -79,6 +89,36 @@ function init() {
     renderer.domElement.id = 'game-canvas-3d'; // Assign ID for potential styling
     gameContainer.appendChild(renderer.domElement);
 
+    // --- Texture Loader ---
+    textureLoader = new THREE.TextureLoader();
+
+    // --- Pre-load Character Textures ---
+    console.log("init: Pre-loading character textures...");
+    textureLoader.load(characterAssets.taz, (texture) => {
+        console.log("init: Taz texture loaded.");
+        texture.magFilter = THREE.NearestFilter; // Pixelated look
+        texture.minFilter = THREE.NearestFilter;
+        characterTextures.taz = texture;
+        // Set the initial dog texture once taz is loaded
+        if (selectedCharacter === 'taz' && dogObject && !dogObject.material.map) {
+             console.log("init: Setting initial texture to Taz.");
+            dogObject.material.map = characterTextures.taz;
+            dogObject.material.needsUpdate = true;
+        }
+    });
+    textureLoader.load(characterAssets.chloe, (texture) => {
+        console.log("init: Chloe texture loaded.");
+        texture.magFilter = THREE.NearestFilter; // Pixelated look
+        texture.minFilter = THREE.NearestFilter;
+        characterTextures.chloe = texture;
+         // Set the initial dog texture once chloe is loaded (if chloe is selected)
+        if (selectedCharacter === 'chloe' && dogObject && !dogObject.material.map) {
+            console.log("init: Setting initial texture to Chloe.");
+            dogObject.material.map = characterTextures.chloe;
+            dogObject.material.needsUpdate = true;
+        }
+    });
+
     // Lighting
     ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Soft white light
     scene.add(ambientLight);
@@ -86,13 +126,15 @@ function init() {
     directionalLight.position.set(5, 10, 7.5);
     scene.add(directionalLight);
 
-    // --- Placeholder Game Objects ---
-    // Dog (Placeholder: Cube)
-    const dogGeometry = new THREE.BoxGeometry(DOG_SIZE, DOG_SIZE, DOG_SIZE);
-    const dogMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // <-- Change color to red
-    dogObject = new THREE.Mesh(dogGeometry, dogMaterial);
-    dogObject.position.set(dog.x, dog.y, dog.z); // Position will now be (0, 0, 0) due to DOG_START_X change
-    console.log(`init: Creating dog object at (${dog.x}, ${dog.y}, ${dog.z})`); // <-- Log position
+    // --- Game Objects ---
+
+    // Dog (Sprite with Texture)
+    // Create material first, map will be set by loader callback
+    const dogMaterial = new THREE.SpriteMaterial({ transparent: true, map: null }); // Start with null map
+    dogObject = new THREE.Sprite(dogMaterial);
+    dogObject.scale.set(DOG_SIZE * 1.5, DOG_SIZE * 1.5, 1); // Adjust scale for sprite size
+    dogObject.position.set(dog.x, dog.y, dog.z);
+    console.log(`init: Creating dog sprite at (${dog.x}, ${dog.y}, ${dog.z})`);
     scene.add(dogObject);
 
     // Ground (Placeholder: Plane)
@@ -125,12 +167,27 @@ function setupUIAndListeners() {
     if (!charOptions.length) console.warn("setupUIAndListeners: No character options found!");
     charOptions.forEach(option => {
         option.addEventListener('click', () => {
-            selectedCharacter = option.dataset.char;
-            // TODO: Update 3D model/texture when ready
-            console.log("Character selected:", selectedCharacter);
+            const newlySelectedCharacter = option.dataset.char;
+             // Only update if the character actually changes
+            if (newlySelectedCharacter !== selectedCharacter) {
+                selectedCharacter = newlySelectedCharacter;
+                console.log("Character selected:", selectedCharacter);
 
-            charOptions.forEach(opt => opt.classList.remove('selected'));
-            option.classList.add('selected');
+                // Update 3D model/texture
+                if (characterTextures[selectedCharacter]) {
+                    console.log(`Updating dog texture to ${selectedCharacter}`);
+                    dogObject.material.map = characterTextures[selectedCharacter];
+                    dogObject.material.needsUpdate = true;
+                } else {
+                    console.warn(`Texture for ${selectedCharacter} not loaded yet.`);
+                    // Optionally set to null or a default placeholder if load failed
+                    // dogObject.material.map = null; // Or some default texture
+                    // dogObject.material.needsUpdate = true;
+                }
+
+                charOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            } // end if character changed
         });
     });
     // Set initial selection visually
@@ -173,7 +230,7 @@ function startGame() {
     gameStarted = true;
     gameOver = false;
     // TODO: Load actual character model/texture
-    startScreen.style.display = 'none';
+    // startScreen.style.display = 'none'; // Handled by input handler now
     gameOverScreen.style.display = 'none';
     gameContainer.classList.remove('game-is-over');
     score = 0;
@@ -192,12 +249,17 @@ function startGame() {
     pipes = [];
     lastPipeSpawn = Date.now(); // Reset spawn timer
 
+    // --- Reset Frame Rate Timer ---
+    lastTime = 0;
+    elapsedTime = 0;
+
     // Start game loop
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
     console.log("startGame: Starting game loop.");
-    gameLoop();
+    // Directly call gameLoop, it will request the next frame
+    gameLoop(performance.now()); // Pass initial timestamp
 }
 
 // Reset the game
@@ -207,14 +269,38 @@ function resetGame() {
 }
 
 // Game loop (Three.js style)
-function gameLoop() {
+function gameLoop(currentTime) { // Pass currentTime from requestAnimationFrame
+    // Request the next frame immediately. Pass the callback function.
     animationFrameId = requestAnimationFrame(gameLoop);
 
-    if (!gameOver) {
-        update();
+    // Initialize lastTime on the first frame or after reset
+    if (!lastTime) {
+        lastTime = currentTime;
     }
 
-    render();
+    // Calculate time elapsed since the last processed frame
+    const deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    // Accumulate elapsed time
+    elapsedTime += deltaTime;
+
+    // Update and render only if enough time has passed for the target frame rate
+    if (elapsedTime >= targetFrameDuration) {
+        if (!gameOver && gameStarted) { // Check gameStarted as well
+            update(); // Update game logic
+        }
+        render(); // Render the scene
+
+        // Subtract the fixed frame duration from the accumulator
+        // This helps maintain a consistent update rate even if frames fluctuate
+        elapsedTime -= targetFrameDuration;
+
+        // Optional: Clamp elapsed time to prevent spiral of death if updates lag severely
+        // elapsedTime = Math.min(elapsedTime, targetFrameDuration * 5); // e.g., max 5 frames behind
+    }
+
+    // Note: rendering happens conditionally based on targetFrameDuration
 }
 
 // Update game state for 3D
@@ -433,18 +519,35 @@ function handleInputStart(e) {
         e.preventDefault(); // Prevent default touch behavior like scrolling
     }
 
+    // Prevent actions if already transitioning (starting/restarting)
+    if (isTransitioning) {
+        console.log("handleInputStart: Ignoring input, already transitioning.");
+        return;
+    }
+
     console.log(`handleInputStart: Current state - gameStarted: ${gameStarted}, gameOver: ${gameOver}`);
 
     if (!gameStarted && !gameOver) {
-        console.log("handleInputStart: Calling startGame()...");
-        startGame();
+        console.log("handleInputStart: Initiating startGame() with delay...");
+        isTransitioning = true;
+        // Hide start screen immediately for responsiveness, but delay game logic
+        startScreen.style.display = 'none';
+        setTimeout(() => {
+            startGame();
+            isTransitioning = false; // Allow input again after game starts
+        }, RESTART_DELAY);
     } else if (gameStarted && !gameOver) {
         console.log("handleInputStart: Setting dog.isFlapping = true");
-        dog.isFlapping = true;
+        dog.isFlapping = true; // Flap should be immediate
     } else if (gameOver) {
-        console.log("handleInputStart: Calling resetGame()...");
-        // Click/tap anywhere on game over screen or button to restart
-        resetGame();
+        console.log("handleInputStart: Initiating resetGame() with delay...");
+        isTransitioning = true;
+        // Hide game over screen immediately, but delay game logic
+        gameOverScreen.style.display = 'none';
+        setTimeout(() => {
+            resetGame();
+            isTransitioning = false; // Allow input again after game restarts
+        }, RESTART_DELAY);
     }
 }
 
