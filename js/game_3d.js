@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Game constants (adjust as needed for 3D)
-const GRAVITY = 0.01; // Adjusted for 3D space/scale - Reduced from 0.015
+const GRAVITY = 0.006; // Adjusted for 3D space/scale - Reduced from 0.01
 const FLAP_FORCE = -0.5; // Adjusted for 3D space/scale
 const PIPE_SPEED = 0.05; // Adjusted for 3D space/scale
 const PIPE_SPAWN_INTERVAL = 1500; // milliseconds
@@ -11,6 +11,9 @@ const DOG_START_X = 0;
 const DOG_START_Y = 0;
 const DOG_SIZE = 1.0; // Size of the dog object
 const HITBOX_PADDING = 0.3; // Padding for collision detection. Increased from 0.1 for less sensitivity.
+const FLAP_UP_ROTATION = Math.PI / 6; // 30 degrees upward tilt on flap
+const MAX_DOWN_ROTATION = -Math.PI / 2; // 90 degrees downward tilt when falling fast
+const ROTATION_LERP_FACTOR = 0.05; // How quickly rotation adjusts (lower is smoother)
 
 // Three.js variables
 let scene, camera, renderer;
@@ -307,25 +310,55 @@ function gameLoop(currentTime) { // Pass currentTime from requestAnimationFrame
 function update() {
     if (!gameStarted || gameOver) return;
 
-    // Update dog physics
+    // --- Physics Update ---
+    // Apply gravity
     dog.velocity += GRAVITY;
+
+    // Apply flap force (instantaneous)
     if (dog.isFlapping) {
         dog.velocity = FLAP_FORCE;
         dog.isFlapping = false;
         // flapSoundContext = window.gameSounds.flap(); // Re-enable sounds later
     }
+
+    // Update position
     dog.y += dog.velocity;
     dogObject.position.y = dog.y;
 
+    // --- Rotation Update ---
+    // Map velocity to rotation:
+    // - FLAP_FORCE (max upward velocity) maps to FLAP_UP_ROTATION
+    // - Positive velocity (falling) maps towards MAX_DOWN_ROTATION
+    // We can use a simple mapping for now. More complex mapping could consider terminal velocity.
+    let targetRotation = MAX_DOWN_ROTATION; // Default to falling rotation
+    if (dog.velocity < 0) { // Moving upwards
+        // Interpolate between 0 rotation (at velocity 0) and FLAP_UP_ROTATION (at FLAP_FORCE)
+        targetRotation = THREE.MathUtils.mapLinear(dog.velocity, 0, FLAP_FORCE, 0, FLAP_UP_ROTATION);
+    } else { // Moving downwards or stationary
+        // Interpolate between 0 rotation (at velocity 0) and MAX_DOWN_ROTATION (at some falling velocity, e.g., -FLAP_FORCE)
+        // Clamp velocity for mapping to avoid excessive rotation if falling extremely fast
+        const effectiveVelocity = Math.min(dog.velocity, -FLAP_FORCE); // Consider velocity up to the magnitude of a flap down
+        targetRotation = THREE.MathUtils.mapLinear(effectiveVelocity, 0, -FLAP_FORCE, 0, MAX_DOWN_ROTATION);
+    }
+
+    // Clamp target rotation to ensure it stays within bounds
+    targetRotation = THREE.MathUtils.clamp(targetRotation, MAX_DOWN_ROTATION, FLAP_UP_ROTATION);
+
+    // Smoothly interpolate current rotation towards the target
+    dogObject.rotation.z = THREE.MathUtils.lerp(dogObject.rotation.z, targetRotation, ROTATION_LERP_FACTOR);
+
+
+    // --- Collision Checks ---
     // Check for collisions with ground
     if (dog.y - DOG_SIZE / 2 < GROUND_Y_POSITION) {
         dog.y = GROUND_Y_POSITION + DOG_SIZE / 2;
         dogObject.position.y = dog.y;
+        dogObject.rotation.z = MAX_DOWN_ROTATION; // Point straight down on hit
         gameEnd();
         return; // Stop update if game ended
     }
 
-    // Check for collisions with ceiling (adjust based on camera/scene setup)
+    // Check for collisions with ceiling (optional, adjust based on camera/scene setup)
     // const ceilingY = camera.position.y + 5; // Example ceiling
     // if (dog.y + DOG_SIZE / 2 > ceilingY) {
     //     dog.y = ceilingY - DOG_SIZE / 2;
