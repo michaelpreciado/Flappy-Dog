@@ -497,11 +497,15 @@ async function gameEnd() { // Made async to await score submission
     // Fetch and display the updated leaderboard *after* submission attempt
     await fetchGlobalLeaderboard();
 
-    // Show game over screen
-    finalScoreDisplay.textContent = score;
-    localHighScoreDisplay.textContent = localHighScore; // Display updated local high score
-    gameOverScreen.classList.add('visible');
-    startScreen.classList.remove('visible'); // Ensure start screen is hidden
+    // Show game over screen - DELAYED
+    const showGameOverScreenDelay = 150; // milliseconds delay
+    setTimeout(() => {
+        finalScoreDisplay.textContent = score;
+        localHighScoreDisplay.textContent = localHighScore; // Display updated local high score
+        gameOverScreen.classList.add('visible');
+        startScreen.classList.remove('visible'); // Ensure start screen is hidden
+        console.log(`Game Over screen displayed after ${showGameOverScreenDelay}ms delay.`);
+    }, showGameOverScreenDelay);
 
     console.log('Game ended. Final score:', score, 'Local High Score:', localHighScore);
 }
