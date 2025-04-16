@@ -18,6 +18,10 @@ exports.handler = async (event, context) => {
     if (!supabase) {
         return {
             statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
             body: JSON.stringify({ error: 'Database client configuration missing.' })
         };
     }
@@ -40,8 +44,7 @@ exports.handler = async (event, context) => {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
-                // Optional CORS header if needed:
-                // 'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify(data || []), // Return fetched data or empty array
         };
@@ -49,6 +52,10 @@ exports.handler = async (event, context) => {
         console.error('Error fetching leaderboard:', error.message || error);
         return {
             statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
             body: JSON.stringify({ error: 'Failed to fetch leaderboard data.', details: error.message }),
         };
     }

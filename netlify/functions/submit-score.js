@@ -26,16 +26,34 @@ exports.handler = async (event, context) => {
     if (!SUPABASE_DATABASE_URL || !SUPABASE_SERVICE_KEY) {
         return {
             statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
             body: JSON.stringify({ error: 'Supabase environment variables not set.' }),
         };
     }
 
     if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+        return {
+            statusCode: 405,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+            body: 'Method Not Allowed'
+        };
     }
 
     if (!supabase) {
-        return { statusCode: 500, body: JSON.stringify({ error: 'Database client configuration missing.' }) };
+        return {
+            statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+            body: JSON.stringify({ error: 'Database client configuration missing.' })
+        };
     }
 
     try {
@@ -129,7 +147,10 @@ exports.handler = async (event, context) => {
 
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
             body: JSON.stringify({
                 status: 'success',
                 action: action,
@@ -144,6 +165,10 @@ exports.handler = async (event, context) => {
         // Consider specific error codes if needed (e.g., 409 for conflict if using upsert without checks)
         return {
             statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
             body: JSON.stringify({ error: 'Failed to submit score.', details: error.message }),
         };
     }
