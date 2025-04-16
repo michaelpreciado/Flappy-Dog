@@ -8,12 +8,12 @@ function sanitize(str) {
 }
 
 const SUPABASE_DATABASE_URL = process.env.SUPABASE_DATABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const MIN_NICKNAME_LENGTH = 3;
 const MAX_NICKNAME_LENGTH = 12;
 
 if (!SUPABASE_DATABASE_URL || !SUPABASE_SERVICE_KEY) {
-    console.error('Supabase Database URL or Service Key environment variable not set.');
+    console.error('Supabase Database URL or Service Role Key environment variable not set.');
 }
 
 // Create a single supabase client for interacting with your database
