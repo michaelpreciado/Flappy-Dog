@@ -60,6 +60,7 @@ let globalLeaderboardListStart, globalLeaderboardListGameOver; // New leaderboar
 // Input handlers (Moved BEFORE init)
 function handleKeyDown(e) {
     if (e.code === 'Space') {
+        console.log(`handleKeyDown: Space detected. State: gameStarted=${gameStarted}, gameOver=${gameOver}`);
         if (!gameStarted && !gameOver) { // Simplified condition
             if (areAssetsLoaded()) {
                 startGame();
@@ -80,6 +81,7 @@ function handleKeyUp(e) {
 
 function handleTouchStart(e) {
     e.preventDefault();
+    console.log(`handleTouchStart: Touch detected. State: gameStarted=${gameStarted}, gameOver=${gameOver}`);
     if (!gameStarted && !gameOver) {
         if (areAssetsLoaded()) {
             startGame();
@@ -101,6 +103,7 @@ function handleTouchEnd(e) {
 function handleMouseDown(e) {
     // Start button handled separately
     if (e.target === canvas) {
+        console.log(`handleMouseDown: Canvas mouse down. State: gameStarted=${gameStarted}, gameOver=${gameOver}`);
         if (!gameStarted && !gameOver) {
             if (areAssetsLoaded()) {
                 startGame();
@@ -464,7 +467,11 @@ function checkCollision(rect1, rect2) {
 
 // End the game
 async function gameEnd() { // Made async to await score submission
-    if (gameOver) return; // Prevent multiple calls
+    console.log(`gameEnd called. Current state: gameOver=${gameOver}, gameStarted=${gameStarted}, score=${score}`);
+    if (gameOver) {
+        console.log('gameEnd: Already game over, returning.');
+        return; // Prevent multiple calls
+    }
     gameOver = true;
     gameStarted = false;
     if (window.gameSounds) hitSoundContext = window.gameSounds.hit();
