@@ -2,9 +2,9 @@
 // This file handles the game initialization, loop, and core mechanics
 
 // Game constants
-const GRAVITY = 0.45;
-const FLAP_FORCE = -11;
-const PIPE_SPEED = 3;
+const GRAVITY = 0.35;
+const FLAP_FORCE = -14;
+const PIPE_SPEED = 2.8;
 const PIPE_SPAWN_INTERVAL = 1500; // milliseconds
 const PIPE_GAP = 160;
 const GROUND_HEIGHT = 80;
@@ -12,6 +12,9 @@ const MARIO_WIDTH = 40;
 const MARIO_HEIGHT = 40;
 const DEVICE_ID_KEY = 'flappyDogDeviceIdentifier';
 const NETLIFY_FUNCTIONS_PATH = '/.netlify/functions/'; // Adjust if using a custom path
+
+const RESTART_DELAY = 500; // milliseconds delay before player can restart after death
+let restartAllowed = false;
 
 // Game variables
 let canvas, ctx;
@@ -139,6 +142,10 @@ function init() {
     gameContainer = document.querySelector('.game-container');
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
+    // Optimize rendering for pixel art on mobile (disable smoothing)
+    ctx.imageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
     startScreen = document.getElementById('start-screen');
     gameOverScreen = document.getElementById('game-over');
     scoreDisplay = document.getElementById('score');
@@ -147,12 +154,21 @@ function init() {
     globalLeaderboardListStart = document.getElementById('global-leaderboard-list-start');
     globalLeaderboardListGameOver = document.getElementById('global-leaderboard-list-gameover');
     
-    // Set canvas dimensions
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
-    
-    // Ground position
-    ground.y = canvas.height - GROUND_HEIGHT;
+    // Retina scaling and responsive resizing
+    const dpi = window.devicePixelRatio || 1;
+    const parent = canvas.parentElement;
+    function resizeCanvas() {
+        const w = parent.clientWidth;
+        const h = parent.clientHeight;
+        canvas.width = w * dpi;
+        canvas.height = h * dpi;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpi, 0, 0, dpi, 0, 0);
+        ground.y = h - GROUND_HEIGHT;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
     
     // Get Device ID
     deviceId = getOrCreateDeviceId();
@@ -268,6 +284,7 @@ function startGame() {
     console.log("Starting game...");
     gameStarted = true;
     gameOver = false;
+    restartAllowed = false;
     marioSprite.src = characterAssets[selectedCharacter];
     startScreen.classList.remove('visible');
     gameOverScreen.classList.remove('visible');
@@ -289,7 +306,11 @@ function startGame() {
 
 // Reset the game
 function resetGame() {
-    // Don't need to check assets again if resetting from game over
+    if (!restartAllowed) {
+        console.log('Reset attempted too soon, ignoring');
+        return;
+    }
+    restartAllowed = false;
     console.log("Resetting game...");
     startGame();
 }
@@ -506,6 +527,12 @@ async function gameEnd() { // Made async to await score submission
         startScreen.classList.remove('visible'); // Ensure start screen is hidden
         console.log(`Game Over screen displayed after ${showGameOverScreenDelay}ms delay.`);
     }, showGameOverScreenDelay);
+
+    // Allow restart after delay
+    setTimeout(() => {
+        restartAllowed = true;
+        console.log(`Restart now allowed after ${RESTART_DELAY}ms delay`);
+    }, RESTART_DELAY);
 
     console.log('Game ended. Final score:', score, 'Local High Score:', localHighScore);
 }
